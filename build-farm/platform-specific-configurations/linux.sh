@@ -304,12 +304,12 @@ if [[ "${CONFIGURE_ARGS}" =~ .*"--with-devkit=".* ]]; then
 elif [[ "${BUILD_ARGS}" =~ .*"--use-adoptium-devkit".* ]]; then
   echo "Using gcc from Adoptium DevKit toolchain specified in --use-adoptium-devkit build args"
 else
-  if [ "${VARIANT}" == "${BUILD_VARIANT_DRAGONWELL}" ] && [ "$JAVA_FEATURE_VERSION" -eq 11 ] && [ -r /usr/local/gcc9/ ] && [ "${ARCHITECTURE}" == "aarch64" ]; then
+  if [ "${VARIANT}" == "${BUILD_VARIANT_DRAGONWELL}" ] && [ "$JAVA_FEATURE_VERSION" -eq 11 ] && [ -r /usr/local/gcc-9.3.0/ ]; then
     # GCC9 rather than 10 requested by Alibaba for now
     # Ref https://github.com/adoptium/temurin-build/issues/2250#issuecomment-732958466
-    export PATH=/usr/local/gcc9/bin:$PATH
-    export CC=/usr/local/gcc9/bin/gcc-9.3
-    export CXX=/usr/local/gcc9/bin/g++-9.3
+    export PATH=/usr/local/gcc-9.3.0/bin:$PATH
+    export CC=/usr/local/gcc-9.3.0/bin/gcc
+    export CXX=/usr/local/gcc-9.3.0/bin/g++
     # Enable GCC 10 for Java 17+ for repeatable builds, but not for our supported releases
     # Ref https://github.com/adoptium/temurin-build/issues/2787
   elif [ "${ARCHITECTURE}" == "riscv64" ] && [ -r /usr/bin/gcc-10 ]; then
