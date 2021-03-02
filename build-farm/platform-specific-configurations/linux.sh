@@ -304,7 +304,7 @@ if [[ "${CONFIGURE_ARGS}" =~ .*"--with-devkit=".* ]]; then
 elif [[ "${BUILD_ARGS}" =~ .*"--use-adoptium-devkit".* ]]; then
   echo "Using gcc from Adoptium DevKit toolchain specified in --use-adoptium-devkit build args"
 else
-  if [ "${VARIANT}" == "${BUILD_VARIANT_DRAGONWELL}" ] && [ "$JAVA_FEATURE_VERSION" -eq 11 ] && [ -r /usr/local/gcc-9.3.0/ ]; then
+  if [ "${VARIANT}" == "${BUILD_VARIANT_DRAGONWELL}" ] && [ "$JAVA_FEATURE_VERSION" -eq 11 ] && [ -r /usr/local/gcc-9.3.0/ ] && [ "${ARCHITECTURE}" == "aarch64" ]; then
     # GCC9 rather than 10 requested by Alibaba for now
     # Ref https://github.com/adoptium/temurin-build/issues/2250#issuecomment-732958466
     export PATH=/usr/local/gcc-9.3.0/bin:$PATH
