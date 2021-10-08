@@ -375,13 +375,19 @@ getOpenJdkVersion() {
         local updateNum="$(cut -d'.' -f 2 <"${dragonwellVerFile}")"
         local buildNum="$(cut -d'.' -f 6 <"${dragonwellVerFile}")"
         version="jdk8u${updateNum}-b${buildNum}"
-      else
+      elif [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK11_CORE_VERSION}" ]; then
         local minorNum="$(cut -d'.' -f 2 <"${dragonwellVerFile}")"
         local updateNum="$(cut -d'.' -f 3 <"${dragonwellVerFile}")"
         # special handling for dragonwell version
         local dragonwellPatch="$(cut -d'.' -f 4 <"${dragonwellVerFile}")"
         local buildNum="$(cut -d'.' -f 5 <"${dragonwellVerFile}")"
         version="jdk-11.${minorNum}.${updateNum}.${dragonwellPatch}+${buildNum}"
+      else
+        local minorNum="$(cut -d'.' -f 2 <"${dragonwellVerFile}")"
+        local updateNum="$(cut -d'.' -f 3 <"${dragonwellVerFile}")"
+        local dragonwellPatch="$(cut -d'.' -f 4 <"${dragonwellVerFile}")"
+        local buildNum="$(cut -d'.' -f 5 <"${dragonwellVerFile}")"
+        version="jdk-17.${minorNum}.${updateNum}.${dragonwellPatch}+${buildNum}"
       fi
     else
       version=$(getOpenJDKTag)
