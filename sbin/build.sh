@@ -1029,6 +1029,7 @@ executeTemplatedFile() {
   fi
 
   # Execute the build passing the workspace dir and target dir as params for configure.txt
+  chmod 777 ${BUILD_CONFIG[WORKSPACE_DIR]}/config/configure-and-build.sh
   bash "${BUILD_CONFIG[WORKSPACE_DIR]}/config/configure-and-build.sh" ${BUILD_CONFIG[WORKSPACE_DIR]} ${BUILD_CONFIG[TARGET_DIR]}
   exitCode=$?
 
