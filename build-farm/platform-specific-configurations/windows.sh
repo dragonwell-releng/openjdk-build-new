@@ -156,6 +156,12 @@ if [[ "$JAVA_FEATURE_VERSION" -ge 21 ]]; then
   export BUILD_ARGS="${BUILD_ARGS} --freetype-dir bundled"
 fi
 
+if [ "${VARIANT}" == "${BUILD_VARIANT_DRAGONWELL}" ] && [ "${JAVA_TO_BUILD}" == "${JDK17_VERSION}" ]
+then
+  echo "set dragonwell 17 boot dir"
+  export JDK_BOOT_DIR="//cygdrive/c/Jenkins/workspace/zulu17/"
+fi
+
 if [ "${ARCHITECTURE}" == "aarch64" ]; then
   export CONFIGURE_ARGS_FOR_ANY_PLATFORM="${CONFIGURE_ARGS_FOR_ANY_PLATFORM} --disable-ccache --openjdk-target=aarch64-unknown-cygwin"
 fi
