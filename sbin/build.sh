@@ -385,8 +385,10 @@ getOpenJdkVersion() {
       else
         local minorNum="$(cut -d'.' -f 2 <"${dragonwellVerFile}")"
         local updateNum="$(awk -F"[.+]" '{print $3}' <"${dragonwellVerFile}")"
+        local patch="$(awk -F"[.+]" '{print $4}' <"${dragonwellVerFile}")"
+        local dragonwellPatch="$(awk -F"[.+]" '{print $5}' <"${dragonwellVerFile}")"
         local buildNum="$(cut -d'+' -f 2 <"${dragonwellVerFile}")"
-        version="jdk-17.${minorNum}.${updateNum}+${buildNum}"
+        version="jdk-17.${minorNum}.${updateNum}.${patch}.${dragonwellPatch}+${buildNum}"
       fi
     else
       version=$(getOpenJDKTag)
@@ -613,7 +615,7 @@ configureVersionStringParameter() {
       dragonwellPatch=$(echo "${openJdkVersion}" | awk -F "[+.]" '{ print $4 }')
     fi
 
-    if [[ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]] && [[ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK8_CORE_VERSION}" ]]; then
+    if [[ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]]; then
       addConfigureArgIfValueIsNotEmpty "--with-version-patch=" "${dragonwellPatch}"
     fi
 
