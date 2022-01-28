@@ -2021,7 +2021,32 @@ getJdkArchivePath() {
   # local version="$(parseJavaVersionString)
   # echo "jdk-${version}"
   if [ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]; then
-    echo "dragonwell-${BUILD_CONFIG[OPENJDK_FEATURE_NUMBER]}"
+    local dragonwellVerFile=${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[WORKING_DIR]}/${BUILD_CONFIG[OPENJDK_SOURCE_DIR]}/version.txt
+    if [ -r "${dragonwellVerFile}" ]; then
+      if [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK8_CORE_VERSION}" ]; then
+        local v1="$(cut -d'.' -f 3 <"${dragonwellVerFile}")"
+        local v2="$(cut -d'.' -f 4 <"${dragonwellVerFile}")"
+        local v3="$(cut -d'.' -f 5 <"${dragonwellVerFile}")"
+        version="dragonwell-${v1}.${v2}.${v3}"
+      elif [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK11_CORE_VERSION}" ]; then
+        local minorNum="$(cut -d'.' -f 2 <${dragonwellVerFile})"
+        local updateNum="$(cut -d'.' -f 3 <${dragonwellVerFile})"
+        local dragonwellPatch="$(cut -d'.' -f 4 <${dragonwellVerFile})"
+        local buildNum="$(cut -d'.' -f 5 <${dragonwellVerFile})"
+        version="dragonwell-11.${minorNum}.${updateNum}.${dragonwellPatch}+${buildNum}"
+      else
+        local minorNum="$(cut -d'.' -f 2 <${dragonwellVerFile})"
+        local updateNum="$(awk -F"[.+]" '{print $3}' <${dragonwellVerFile})"
+        local patch="$(awk -F"[.+]" '{print $4}'  <${dragonwellVerFile})"
+        local dragonwellPatch="$(awk -F"[.+]" '{print $5}' <${dragonwellVerFile})"
+        local buildNum="$(cut -d'+' -f 2 <${dragonwellVerFile})"
+        version="dragonwell-17.${minorNum}.${updateNum}.${patch}.${dragonwellPatch}+${buildNum}"
+      fi
+      echo "$version"
+    else
+      local version=$(getOpenJdkVersion)
+      echo "$version"
+    fi
   else
     local version=$(getOpenJdkVersion)
     echo "$version"
