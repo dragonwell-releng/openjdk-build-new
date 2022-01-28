@@ -2020,9 +2020,12 @@ getJdkArchivePath() {
   # Todo: Set this to the outcome of https://github.com/adoptium/temurin-build/issues/1016
   # local version="$(parseJavaVersionString)
   # echo "jdk-${version}"
-
-  local version=$(getOpenJdkVersion)
-  echo "$version"
+  if [ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]; then
+    echo "dragonwell-${BUILD_CONFIG[OPENJDK_FEATURE_NUMBER]}"
+  else
+    local version=$(getOpenJdkVersion)
+    echo "$version"
+  fi
 }
 
 getJreArchivePath() {
