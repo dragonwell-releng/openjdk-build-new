@@ -225,6 +225,15 @@ getOpenJDKUpdateAndBuildVersion() {
   cd "${BUILD_CONFIG[WORKSPACE_DIR]}"
 }
 
+getDragonwellVersionOPT() {
+  if [ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]; then
+    local dragonwellVerFile=${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[WORKING_DIR]}/${BUILD_CONFIG[OPENJDK_SOURCE_DIR]}/version.txt
+    if [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK17_CORE_VERSION}" ]; then
+      cut -d'-' -f 2 <"${dragonwellVerFile}"
+    fi
+  fi
+}
+
 patchFreetypeWindows() {
   # Allow freetype 2.8.1 to be built for JDK8u with Visual Studio 2017 (see https://github.com/openjdk/jdk8u-dev/pull/3#issuecomment-1087677766).
   # Don't apply the patch for OpenJ9 (OpenJ9 doesn't need the patch and, technically, it should only be applied for version 2.8.1).
@@ -654,6 +663,10 @@ configureVersionStringParameter() {
     fi
     if [ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_TEMURIN}" ]; then
       addConfigureArg "--with-vendor-version-string=" "${BUILD_CONFIG[VENDOR_VERSION]:-"Temurin"}-${derivedOpenJdkMetadataVersion}"
+    elif [ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]; then
+      local versionOpt
+      versionOpt=$(getDragonwellVersionOPT)
+      addConfigureArg "--with-vendor-version-string=" "${BUILD_CONFIG[VENDOR_VERSION]:-"Temurin"}-${derivedOpenJdkMetadataVersion}-${versionOpt}"
     fi
   fi
 
