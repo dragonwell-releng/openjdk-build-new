@@ -529,7 +529,11 @@ configureVersionStringParameter() {
     BUILD_CONFIG[VENDOR_VM_BUG_URL]="https://github.com/adoptium/adoptium-support/issues"
   elif [[ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]]; then
     BUILD_CONFIG[VENDOR]="Alibaba"
-    BUILD_CONFIG[VENDOR_VERSION]="\"(Alibaba Dragonwell)\""
+    if [ -n "`echo ${BUILD_CONFIG[BRANCH]} | grep standard`" ];then
+      BUILD_CONFIG[VENDOR_VERSION]="\"(Alibaba Dragonwell Standard Edition)\""
+    else
+      BUILD_CONFIG[VENDOR_VERSION]="\"(Alibaba Dragonwell Extended Edition)\""
+    fi
     BUILD_CONFIG[VENDOR_URL]="http://www.alibabagroup.com"
     BUILD_CONFIG[VENDOR_BUG_URL]="mailto:dragonwell_use@googlegroups.com"
     BUILD_CONFIG[VENDOR_VM_BUG_URL]="mailto:dragonwell_use@googlegroups.com"
