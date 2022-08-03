@@ -550,7 +550,7 @@ configureVersionStringParameter() {
     BUILD_CONFIG[VENDOR_BUG_URL]="https://gitee.com/openeuler/bishengjdk-${BUILD_CONFIG[OPENJDK_FEATURE_NUMBER]}/issues"
     BUILD_CONFIG[VENDOR_VM_BUG_URL]="https://gitee.com/openeuler/bishengjdk-${BUILD_CONFIG[OPENJDK_FEATURE_NUMBER]}/issues"
   fi
-  if [ "${BUILD_CONFIG[OPENJDK_FEATURE_NUMBER]}" != 8 ]; then
+  if [ "${BUILD_CONFIG[OPENJDK_FEATURE_NUMBER]}" != 8 ] || [ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]; then
     addConfigureArg "--with-vendor-name=" "\"${BUILD_CONFIG[VENDOR]}\""
   fi
 
