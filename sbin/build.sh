@@ -1082,6 +1082,16 @@ executeTemplatedFile() {
 
   # Restore exit behavior
   set -eu
+  if [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK11_CORE_VERSION}" ] && [ -n "`echo ${BUILD_CONFIG[BUILD_FULL_NAME]} | grep 'linux-x86_64'`" ]; then
+    PRODUCT_HOME=$(ls -d ${PWD}/build/*/images/${BUILD_CONFIG[JDK_PATH]})
+    git clone https://github.com/dragonwell-project/serverless-adapter.git
+    cd serverless-adapter
+    PATH=/usr/lib/jvm/jdk-11/bin:$PATH JAVA_HOME=/usr/lib/jvm/jdk-11 mvn package
+    cd -
+    mkdir -p ${PRODUCT_HOME}/lib/serverless
+    cp serverless-adapter/target/serverless-adapter-0.1-jar-with-dependencies.jar ${PRODUCT_HOME}/lib/serverless/serverless-adapter.jar
+    cp serverless-adapter/output/libloadclassagent.so ${PRODUCT_HOME}/lib/serverless/
+  fi
 }
 
 createOpenJDKFailureLogsArchive() {
