@@ -1089,7 +1089,7 @@ executeTemplatedFile() {
     PATH=/usr/lib/jvm/jdk-11/bin:$PATH JAVA_HOME=/usr/lib/jvm/jdk-11 mvn package
     cd -
     mkdir -p ${PRODUCT_HOME}/lib/serverless
-    cp serverless-adapter/target/serverless-adapter-0.1-jar-with-dependencies.jar ${PRODUCT_HOME}/lib/serverless/serverless-adapter.jar
+    cp serverless-adapter/target/serverless-adapter-0.1.jar ${PRODUCT_HOME}/lib/serverless/serverless-adapter.jar
     cp serverless-adapter/output/libloadclassagent.so ${PRODUCT_HOME}/lib/serverless/
   fi
 }
