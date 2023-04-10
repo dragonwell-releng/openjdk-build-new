@@ -1086,7 +1086,11 @@ executeTemplatedFile() {
     PRODUCT_HOME=$(ls -d ${PWD}/build/*/images/${BUILD_CONFIG[JDK_PATH]})
     git clone https://github.com/dragonwell-project/serverless-adapter.git
     cd serverless-adapter
-    PATH=/usr/lib/jvm/jdk-11/bin:$PATH JAVA_HOME=/usr/lib/jvm/jdk-11 mvn package
+    if [ -n "`echo ${BUILD_CONFIG[TARGET_FILE_NAME]} | grep alpine-linux`" ];then
+      PATH=/usr/lib/jvm/zulu11/bin:$PATH JAVA_HOME=/usr/lib/jvm/zulu11 mvn package
+    else
+      PATH=/usr/lib/jvm/jdk-11/bin:$PATH JAVA_HOME=/usr/lib/jvm/jdk-11 mvn package
+    fi
     cd -
     mkdir -p ${PRODUCT_HOME}/lib/serverless
     cp serverless-adapter/target/serverless-adapter-0.1.jar ${PRODUCT_HOME}/lib/serverless/serverless-adapter.jar
