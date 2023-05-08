@@ -772,6 +772,12 @@ configureZlibLocation() {
 
 # Configure the command parameters
 configureCommandParameters() {
+  if [[ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]] && [[ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK17_CORE_VERSION}" ]]; then
+    cd "${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[WORKING_DIR]}/${BUILD_CONFIG[OPENJDK_SOURCE_DIR]}"
+    git clone https://github.com/google/googletest.git
+    addConfigureArg "--with-gtest=" "${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[WORKING_DIR]}/${BUILD_CONFIG[OPENJDK_SOURCE_DIR]}/googletest"
+    cd -
+  fi
   configureVersionStringParameter
   configureBootJDKConfigureParameter
   configureDevKitConfigureParameter
