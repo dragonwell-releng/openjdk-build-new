@@ -1088,7 +1088,7 @@ executeTemplatedFile() {
 
   # Restore exit behavior
   set -eu
-  if [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK11_CORE_VERSION}" ] && [ -n "`echo ${BUILD_CONFIG[BUILD_FULL_NAME]} | grep 'linux-x86_64'`" ]; then
+  if [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK11_CORE_VERSION}" ] && [ -n "`echo ${BUILD_CONFIG[BUILD_FULL_NAME]} | grep -E 'linux-x86_64|linux-aarch64'`" ]; then
     PRODUCT_HOME=$(ls -d ${PWD}/build/*/images/${BUILD_CONFIG[JDK_PATH]})
     git clone https://github.com/dragonwell-project/serverless-adapter.git
     cd serverless-adapter
