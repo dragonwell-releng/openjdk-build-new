@@ -534,6 +534,11 @@ configureVersionStringParameter() {
     else
       BUILD_CONFIG[VENDOR_VERSION]="\"(Alibaba Dragonwell Extended Edition)\""
     fi
+    if [ -n "`echo ${BUILD_CONFIG[BRANCH]} | grep 'wip_'`" ];then
+      if [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" != "${JDK8_CORE_VERSION}" ]; then 
+        addConfigureArg "--with-version-pre=" "beta"
+      fi
+    fi
     BUILD_CONFIG[VENDOR_URL]="http://www.alibabagroup.com"
     BUILD_CONFIG[VENDOR_BUG_URL]="mailto:dragonwell_use@googlegroups.com"
     BUILD_CONFIG[VENDOR_VM_BUG_URL]="mailto:dragonwell_use@googlegroups.com"
