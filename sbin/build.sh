@@ -1113,11 +1113,15 @@ executeTemplatedFile() {
     PRODUCT_HOME=$(ls -d ${PWD}/build/*/images/${BUILD_CONFIG[JDK_PATH]})
     git clone https://github.com/dragonwell-project/serverless-adapter-jdk8.git serverless-adapter
     cd serverless-adapter
-    wget -q https://compiler-ci-bucket.oss-cn-hangzhou.aliyuncs.com/dragonwell8/20230712-104748-168-%2382-linux.$(arch).release.master-2d8d64e22f3b198ef29442eb21d725d685fda944.tar.gz -O dragonwell.tar.gz
+    if [ "$(arch)" = 'x86_64' ];then
+      wget -q https://dragonwell.oss-cn-shanghai.aliyuncs.com/8.16.17/Alibaba_Dragonwell_Extended_8.16.17_x64_linux.tar.gz -O dragonwell.tar.gz
+    else
+      wget -q https://dragonwell.oss-cn-shanghai.aliyuncs.com/8.16.17/Alibaba_Dragonwell_Extended_8.16.17_aarch64_linux.tar.gz -O dragonwell.tar.gz
+    fi
     tar xf dragonwell.tar.gz
     pwd
-    $(pwd)/j2sdk-image/bin/java -version
-    PATH=$(pwd)/j2sdk-image/bin:$PATH JAVA_HOME=$(pwd)/j2sdk-image mvn package
+    $(pwd)/dragonwell-8.16.17/bin/java -version
+    PATH=$(pwd)/dragonwell-8.16.17/bin:$PATH JAVA_HOME=$(pwd)/dragonwell-8.16.17 mvn package
     cd -
     if [ "$(arch)" = "x86_64" ];then
       arch_dir=amd64
