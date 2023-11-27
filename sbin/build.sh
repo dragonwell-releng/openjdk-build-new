@@ -643,14 +643,12 @@ configureVersionStringParameter() {
     fi
 
     if [[ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]] && [[ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "jdk21" ]]; then
-      local version_string=${openJdkVersion%.*}
-      version_string=$(echo "${version_string%.*}" | cut -d'-' -f 2)
+      local version_string=$(echo "${openJdkVersion%%+*}" | cut -d'-' -f 2)
       addConfigureArgIfValueIsNotEmpty "--with-version-string=" "\"${version_string}\""
     else
       if [[ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]]; then
         addConfigureArgIfValueIsNotEmpty "--with-version-patch=" "${dragonwellPatch}"
       fi
-
       if [ "${BUILD_CONFIG[RELEASE]}" == "false" ]; then
         addConfigureArg "--with-version-opt=" "${dateSuffix}"
         addConfigureArg "--with-version-pre=" "beta"
