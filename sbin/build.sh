@@ -1131,14 +1131,15 @@ executeTemplatedFile() {
     cp serverless-adapter/target/serverless-adapter-0.1.jar ${PRODUCT_HOME}/lib/serverless/serverless-adapter.jar
     cp serverless-adapter/output/libloadclassagent.so ${PRODUCT_HOME}/lib/serverless/
     if [ -z "`echo ${BUILD_CONFIG[BRANCH]} | grep standard`" ];then
+      local criuReleaseUrl="https://api.github.com/repos/dragonwell-project/criu/releases/latest"
       if [ "$(arch)" = "x86_64" ];then
-        local criuDownloadUrl=$(curl -s https://api.github.com/repos/dragonwell-project/criu/releases/latest | grep -i browser_download_url | grep \-x64 | cut -d '"' -f 4)
+        local criuDownloadUrl=$(curl -s ${criuReleaseUrl} | grep -i browser_download_url | grep "x64." | cut -d '"' -f 4)
       elif [ "$(arch)" = "aarch64" ];then
-        local criuDownloadUrl=$(curl -s https://api.github.com/repos/dragonwell-project/criu/releases/latest | grep -i browser_download_url | grep \-aarch64 | cut -d '"' -f 4)
+        local criuDownloadUrl=$(curl -s ${criuReleaseUrl} | grep -i browser_download_url | grep "aarch64." | cut -d '"' -f 4)
       fi
       if [ -n "${criuDownloadUrl}" ];then
         rm -rf criu*
-        curl -OLSk -C - --retry 5 ${criuDownloadUrl} -o criu.tar.gz
+        curl -LSk -C - --retry 5 ${criuDownloadUrl} -o criu.tar.gz
         tar zxf criu.tar.gz
         chmod +x criu
         mv criu ${PRODUCT_HOME}/lib/
