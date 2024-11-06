@@ -1136,7 +1136,7 @@ executeTemplatedFile() {
       if [ "$(arch)" = "x86_64" ];then
         local criuDownloadUrl=$(curl -s ${criuReleaseUrl} | grep -i browser_download_url | grep "x64." | cut -d '"' -f 4)
       elif [ "$(arch)" = "aarch64" ];then
-        local criuDownloadUrl=$(curl -s ${criuReleaseUrl} | grep -i browser_download_url | grep "aarch64." | cut -d '"' -f 4)
+        local criuDownloadUrl=$(curl -s ${criuReleaseUrl} | grep -i browser_download_url | grep "arm64." | cut -d '"' -f 4)
       fi
       if [ -n "${criuDownloadUrl}" ];then
         rm -rf criu*
