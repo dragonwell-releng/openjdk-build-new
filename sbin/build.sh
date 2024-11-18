@@ -1121,7 +1121,9 @@ executeTemplatedFile() {
     #if [ -n "`echo ${BUILD_CONFIG[TARGET_FILE_NAME]} | grep alpine-linux`" ];then
     #  PATH=/usr/lib/jvm/zulu11/bin:$PATH JAVA_HOME=/usr/lib/jvm/zulu11 mvn package
     #else
-    PATH=/usr/lib/jvm/jdk-11/bin:$PATH JAVA_HOME=/usr/lib/jvm/jdk-11 mvn package
+    local jdk_path=jdk-11
+    [ "$(arch)" = "x86_64" ] && jdk_path=jdk11
+    PATH=/usr/lib/jvm/${jdk_path}/bin:$PATH JAVA_HOME=/usr/lib/jvm/${jdk_path} mvn package
     #fi
     cd -
     mkdir -p ${PRODUCT_HOME}/lib/serverless
