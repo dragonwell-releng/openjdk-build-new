@@ -1122,7 +1122,9 @@ executeTemplatedFile() {
     #  PATH=/usr/lib/jvm/zulu11/bin:$PATH JAVA_HOME=/usr/lib/jvm/zulu11 mvn package
     #else
     local jdk_path=jdk-11
-    [ "$(arch)" = "x86_64" ] && jdk_path=jdk11
+    if [ "$(arch)" = "x86_64" ] && [ -z "$(echo ${BUILD_CONFIG[TARGET_FILE_NAME]} | grep riscv)" ];then
+        jdk_path=jdk11
+    fi
     PATH=/usr/lib/jvm/${jdk_path}/bin:$PATH JAVA_HOME=/usr/lib/jvm/${jdk_path} mvn package
     #fi
     cd -
