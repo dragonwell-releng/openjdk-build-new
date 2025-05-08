@@ -456,8 +456,7 @@ checkingAndDownloadingAlsa() {
   if [[ -n "$FOUND_ALSA" ]]; then
     echo "Skipping ALSA download"
   else
-
-    ALSA_BUILD_URL="https://ftp2.osuosl.org/pub/blfs/conglomeration/alsa-lib/alsa-lib-${ALSA_LIB_VERSION}.tar.bz2"
+    ALSA_BUILD_URL="https://compiler-tools.oss-cn-hangzhou.aliyuncs.com/aqavit_dep/alsa-lib-${ALSA_LIB_VERSION}.tar.bz2"
     curl -o "alsa-lib.tar.bz2" "$ALSA_BUILD_URL"
     curl -o "alsa-lib.tar.bz2.sig" "https://www.alsa-project.org/files/pub/lib/alsa-lib-${ALSA_LIB_VERSION}.tar.bz2.sig"
 
