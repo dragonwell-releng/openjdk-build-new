@@ -175,7 +175,7 @@ configureMacOSCodesignParameter() {
   if [[ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]] && [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "jdk21" ]; then
     #local macos_bundle_build_version=0
     addConfigureArg "--with-macosx-bundle-build-version=" "0"
-    if [ "${BUILD_CONFIG[OS_KERNEL_NAME]}" == "linux" ]; then
+    if [ "${BUILD_CONFIG[OS_KERNEL_NAME]}" == "linux" ] && [ -n "`echo ${BUILD_CONFIG[BUILD_FULL_NAME]} | grep -E 'linux-x86_64|linux-aarch64'`" ]; then
       addConfigureArg "--with-jvm-features=" "aiext"
     fi
   fi
