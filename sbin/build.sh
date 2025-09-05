@@ -175,7 +175,7 @@ configureMacOSCodesignParameter() {
   if [[ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]] && [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "jdk21" ]; then
     #local macos_bundle_build_version=0
     addConfigureArg "--with-macosx-bundle-build-version=" "0"
-    if [ "${BUILD_CONFIG[OS_KERNEL_NAME]}" == "linux" ] && [ -n "`echo ${BUILD_CONFIG[BUILD_FULL_NAME]} | grep -E 'linux-x86_64|linux-aarch64'`" ]; then
+    if [ "${BUILD_CONFIG[OS_KERNEL_NAME]}" == "linux" ] && [ -n "`echo ${BUILD_CONFIG[BUILD_FULL_NAME]} | grep -E 'linux-x86_64|linux-aarch64'`" ] && [ -z "$(echo ${BUILD_CONFIG[TARGET_FILE_NAME]} | grep -E 'riscv|alpine')" ]; then
       addConfigureArg "--with-jvm-features=" "aiext"
     fi
   fi
@@ -1173,10 +1173,14 @@ executeTemplatedFile() {
     mkdir -p ${PRODUCT_HOME}/jre/lib/${arch_dir}/serverless
     cp serverless-adapter/target/serverless-adapter-0.1.jar ${PRODUCT_HOME}/jre/lib/${arch_dir}/serverless/serverless-adapter.jar
     cp serverless-adapter/output/libloadclassagent.so ${PRODUCT_HOME}/jre/lib/${arch_dir}/serverless
-  elif [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "jdk21" ] && [ -n "`echo ${BUILD_CONFIG[BUILD_FULL_NAME]} | grep -E 'linux-x86_64|linux-aarch64'`" ]; then
+  elif [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "jdk21" ] && [ -n "`echo ${BUILD_CONFIG[BUILD_FULL_NAME]} | grep -E 'linux-x86_64|linux-aarch64'`" ] && [ -z "$(echo ${BUILD_CONFIG[TARGET_FILE_NAME]} | grep -E 'riscv|alpine')" ]; then
     PRODUCT_HOME=$(ls -d ${PWD}/build/*/images/${BUILD_CONFIG[JDK_PATH]})
     libjvm_path=$(find ${PRODUCT_HOME} -iname libjvm.so)
-    wget https://dragonwell.oss-cn-shanghai.aliyuncs.com/tools/signutil -O signutil
+    if [ "$(arch)" = "aarch64" ]; then
+      wget https://dragonwell.oss-cn-shanghai.aliyuncs.com/tools/signutil-aarch64 -O signutil
+    else
+      wget https://dragonwell.oss-cn-shanghai.aliyuncs.com/tools/signutil -O signutil
+    fi
     chmod +x signutil
     ./signutil sign ~/sk.bin ${libjvm_path}
     ./signutil verify ~/pk.bin ${libjvm_path}
