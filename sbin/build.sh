@@ -178,6 +178,8 @@ configureMacOSCodesignParameter() {
     if [ "${BUILD_CONFIG[OS_KERNEL_NAME]}" == "linux" ] && [ -n "`echo ${BUILD_CONFIG[BUILD_FULL_NAME]} | grep -E 'linux-x86_64|linux-aarch64'`" ] && [ -z "$(echo ${BUILD_CONFIG[TARGET_FILE_NAME]} | grep -E 'riscv|alpine')" ] && [ -z "`echo ${BUILD_CONFIG[BRANCH]} | grep standard`" ]; then
       addConfigureArg "--with-jvm-features=" "aiext"
     fi
+  elif [[ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]] && [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "jdk25" ]; then
+    addConfigureArg "--with-macosx-bundle-build-version=" "0"
   fi
 }
 
