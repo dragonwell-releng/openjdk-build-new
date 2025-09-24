@@ -405,7 +405,7 @@ getOpenJdkVersion() {
         local dragonwellPatch="$(awk -F"[.+]" '{print $5}' <"${dragonwellVerFile}")"
         local buildNum="$(cut -d'+' -f 2 <"${dragonwellVerFile}" | cut -d'-' -f 1)"
         version="jdk-17.${minorNum}.${updateNum}.${patch}.${dragonwellPatch}+${buildNum}"
-      elif [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" != "jdk21" ]; then
+      elif [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "jdk21" ]; then
         local minorNum="$(cut -d'.' -f 2 <"${dragonwellVerFile}")"
         local updateNum="$(awk -F"[.+]" '{print $3}' <"${dragonwellVerFile}")"
         local patch="$(awk -F"[.+]" '{print $4}' <"${dragonwellVerFile}")"
