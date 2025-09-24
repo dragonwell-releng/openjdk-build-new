@@ -654,7 +654,7 @@ configureVersionStringParameter() {
       dragonwellPatch=$(echo "${openJdkVersion}" | awk -F "[+.]" '{ print $4 }')
     fi
 
-    if [[ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]] && [[ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "jdk21" ]]; then
+    if [[ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]] && { [[ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "jdk21" ]] || [[ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "jdk25" ]]; }; then
       local version_string=$(echo "${openJdkVersion%%+*}" | cut -d'-' -f 2)
       addConfigureArgIfValueIsNotEmpty "--with-version-string=" "\"${version_string}\""
     else
