@@ -115,24 +115,34 @@ function setCrossCompilerEnvironment()
 
   # RISC-V cross compile settings for all VARIANT values
   echo RISC-V cross-compilation setup ...  Setting RISCV64, LD_LIBRARY_PATH, PATH, CC, CXX
-  export RISCV64=/opt/riscv_toolchain_linux
-  export LD_LIBRARY_PATH=$RISCV64/lib64
-  if [ "${VARIANT}" == "${BUILD_VARIANT_BISHENG}" ]; then
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$BUILD_LIBRARY_PATH
-  fi
-
-  if [ -r "$RISCV64/bin/riscv64-unknown-linux-gnu-g++" ]; then
-    export CC=$RISCV64/bin/riscv64-unknown-linux-gnu-gcc
-    export CXX=$RISCV64/bin/riscv64-unknown-linux-gnu-g++
+  if [ "${VARIANT}" == "${BUILD_VARIANT_DRAGONWELL}" ] && [ "$JAVA_FEATURE_VERSION" -eq 25 ]; then
+    export RISCV64=/opt/riscv_toolchain_gcc14
+    export LD_LIBRARY_PATH="$RISCV64/lib64:$RISCV64/sysroot/lib/:${LD_LIBRARY_PATH:-}"
     export PATH="$RISCV64/bin:$PATH"
-  elif [ -r /usr/bin/riscv64-linux-gnu-g++ ]; then
-    export CC=/usr/bin/riscv64-linux-gnu-gcc
-    export CXX=/usr/bin/riscv64-linux-gnu-g++
-    # This is required for OpenJ9 if not using "riscv64-unknown-linux-gnu-*"
-    # i.e. if using the default cross compiler supplied with Debian/Ubuntu
-    export RISCV_TOOLCHAIN_TYPE=install
+    export CC="$RISCV64/bin/riscv64-unknown-linux-gnu-gcc-14.2.0"
+    export CXX="$RISCV64/bin/riscv64-unknown-linux-gnu-g++"
+    RISCV_SYSROOT="$RISCV64/sysroot"
+    echo "Using Dragonwell JDK25 sysroot ${RISCV_SYSROOT}"
+  else
+    export RISCV64=/opt/riscv_toolchain_linux
+    export LD_LIBRARY_PATH=$RISCV64/lib64
+    if [ "${VARIANT}" == "${BUILD_VARIANT_BISHENG}" ]; then
+      export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$BUILD_LIBRARY_PATH
+    fi
+
+    if [ -r "$RISCV64/bin/riscv64-unknown-linux-gnu-g++" ]; then
+      export CC=$RISCV64/bin/riscv64-unknown-linux-gnu-gcc
+      export CXX=$RISCV64/bin/riscv64-unknown-linux-gnu-g++
+      export PATH="$RISCV64/bin:$PATH"
+    elif [ -r /usr/bin/riscv64-linux-gnu-g++ ]; then
+      export CC=/usr/bin/riscv64-linux-gnu-gcc
+      export CXX=/usr/bin/riscv64-linux-gnu-g++
+      # This is required for OpenJ9 if not using "riscv64-unknown-linux-gnu-*"
+      # i.e. if using the default cross compiler supplied with Debian/Ubuntu
+      export RISCV_TOOLCHAIN_TYPE=install
+    fi
+    RISCV_SYSROOT=${RISCV_SYSROOT:-/opt/fedora28_riscv_root}
   fi
-  RISCV_SYSROOT=${RISCV_SYSROOT:-/opt/fedora28_riscv_root}
   if [ ! -d "${RISCV_SYSROOT}" ]; then
      echo "RISCV_SYSROOT=${RISCV_SYSROOT} is undefined or does not exist - cannot proceed"
      exit 1
