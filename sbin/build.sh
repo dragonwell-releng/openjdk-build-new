@@ -806,11 +806,7 @@ configureZlibLocation() {
 configureCommandParameters() {
   if [[ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]] && [[ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK17_CORE_VERSION}" ]]; then
     pushd "${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[WORKING_DIR]}/${BUILD_CONFIG[OPENJDK_SOURCE_DIR]}"
-    # JDK 17's HotSpot gtest sources use the 1.8 API, where the death-test
-    # flag lives in testing::internal.  Newer gtest releases moved it to the
-    # testing namespace, which makes test-image fail to compile.
-    rm -rf googletest
-    git clone https://github.com/google/googletest.git -b release-1.8.1
+    git clone https://github.com/google/googletest.git -b v1.13.0
     addConfigureArg "--with-gtest=" "${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[WORKING_DIR]}/${BUILD_CONFIG[OPENJDK_SOURCE_DIR]}/googletest"
     popd
   elif [[ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]] && [[ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "jdk21" ]]; then
