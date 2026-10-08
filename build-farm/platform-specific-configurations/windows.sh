@@ -153,7 +153,6 @@ then
     if [[ -d "${DRAGONWELL8_BOOTSTRAP}" ]]; then
       export JDK_BOOT_DIR="${DRAGONWELL8_BOOTSTRAP}"
     fi
-    TOOLCHAIN_VERSION="2013"
   fi
 fi
 
