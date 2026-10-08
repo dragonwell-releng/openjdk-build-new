@@ -26,6 +26,10 @@ export OPENJ9_NASM_VERSION=2.13.03
 
 TOOLCHAIN_VERSION="2022"
 
+# Dragonwell JDK 8 and 17 select their installed boot JDKs in the
+# platform-specific blocks below. Keep them out of the generic lookup, which
+# has no JDK 7 download fallback and would fail before the JDK 8 bootstrap is set.
+if [[ "${VARIANT}" == "${BUILD_VARIANT_DRAGONWELL}" && ("${JAVA_TO_BUILD}" = "jdk21u" || "${JAVA_TO_BUILD}" = "jdk25u") ]] || [ "${VARIANT}" != "${BUILD_VARIANT_DRAGONWELL}" ]; then
 if [ "$ARCHITECTURE" == "aarch64" ]; then
   # Windows aarch64 cross compiles requires same version boot jdk
   echo "Cross compile of aarch64 on Windows uses same boot jdk as build version, using: ${JAVA_FEATURE_VERSION}"
@@ -58,6 +62,7 @@ if [ $executedJavaVersion -ne 0 ]; then
     exit 1
 fi
 "$JDK_BOOT_DIR/bin/java" -version 2>&1 | sed 's/^/BOOT JDK: /'
+fi
 
 if [ "${ARCHITECTURE}" == "x86-32" ]
 then
@@ -148,6 +153,7 @@ then
     if [[ -d "${DRAGONWELL8_BOOTSTRAP}" ]]; then
       export JDK_BOOT_DIR="${DRAGONWELL8_BOOTSTRAP}"
     fi
+    TOOLCHAIN_VERSION="2013"
   fi
 fi
 
