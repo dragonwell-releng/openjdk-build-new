@@ -249,8 +249,10 @@ echo "$MAC_ROSETTA_PREFIX $PLATFORM_SCRIPT_DIR/../makejdk-any-platform.sh --clea
 # These will be converted back into speech marks shortly before we use them, in build.sh.
 CONFIGURE_ARGS_FOR_ANY_PLATFORM="${CONFIGURE_ARGS_FOR_ANY_PLATFORM//\"/temporary_speech_mark_placeholder}"
 
+# Preserve spaces and Windows backslashes across the second shell parse.
+printf -v quoted_boot_jdk_dir '%q' "$JDK_BOOT_DIR"
 # shellcheck disable=SC2086
-bash -c "$MAC_ROSETTA_PREFIX $PLATFORM_SCRIPT_DIR/../makejdk-any-platform.sh --clean-git-repo --jdk-boot-dir ${JDK_BOOT_DIR} --configure-args \"${CONFIGURE_ARGS_FOR_ANY_PLATFORM}\" --target-file-name ${FILENAME} ${TAG_OPTION} ${OPTIONS} ${BUILD_ARGS} ${VARIANT_ARG} ${JAVA_TO_BUILD}"
+bash -c "$MAC_ROSETTA_PREFIX $PLATFORM_SCRIPT_DIR/../makejdk-any-platform.sh --clean-git-repo --jdk-boot-dir ${quoted_boot_jdk_dir} --configure-args \"${CONFIGURE_ARGS_FOR_ANY_PLATFORM}\" --target-file-name ${FILENAME} ${TAG_OPTION} ${OPTIONS} ${BUILD_ARGS} ${VARIANT_ARG} ${JAVA_TO_BUILD}"
 
 # If this is jdk8u on mac x64 that has cross compiled on arm64 we need to restore Xcode from the Xcode-11.7.app to default
 if [[ "${JAVA_TO_BUILD}" == "${JDK8_VERSION}" ]] && [[ -n "$MAC_ROSETTA_PREFIX" ]]; then

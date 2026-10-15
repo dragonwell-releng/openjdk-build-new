@@ -26,10 +26,9 @@ export OPENJ9_NASM_VERSION=2.13.03
 
 TOOLCHAIN_VERSION="2022"
 
-# Dragonwell JDK 8 and 17 select their installed boot JDKs in the
-# platform-specific blocks below. Keep them out of the generic lookup, which
-# has no JDK 7 download fallback and would fail before the JDK 8 bootstrap is set.
-if [[ "${VARIANT}" == "${BUILD_VARIANT_DRAGONWELL}" && ("${JAVA_TO_BUILD}" = "jdk21u" || "${JAVA_TO_BUILD}" = "jdk25u") ]] || [ "${VARIANT}" != "${BUILD_VARIANT_DRAGONWELL}" ]; then
+# Add Dragonwell JDK 17 to the existing JDK 21/25 boot JDK lookup.
+# Preserve the existing Dragonwell JDK 8 and 11 behavior.
+if [[ "${VARIANT}" == "${BUILD_VARIANT_DRAGONWELL}" && ("${JAVA_TO_BUILD}" = "jdk17" || "${JAVA_TO_BUILD}" = "jdk21u" || "${JAVA_TO_BUILD}" = "jdk25u") ]] || [ "${VARIANT}" != "${BUILD_VARIANT_DRAGONWELL}" ]; then
 if [ "$ARCHITECTURE" == "aarch64" ]; then
   # Windows aarch64 cross compiles requires same version boot jdk
   echo "Cross compile of aarch64 on Windows uses same boot jdk as build version, using: ${JAVA_FEATURE_VERSION}"
@@ -159,12 +158,6 @@ fi
 if [[ "$JAVA_FEATURE_VERSION" -ge 21 ]]; then
   # jdk-21+ uses "bundled" FreeType
   export BUILD_ARGS="${BUILD_ARGS} --freetype-dir bundled"
-fi
-
-if [ "${VARIANT}" == "${BUILD_VARIANT_DRAGONWELL}" ] && [ "${JAVA_TO_BUILD}" == "${JDK17_VERSION}" ]
-then
-  echo "set dragonwell 17 boot dir"
-  export JDK_BOOT_DIR="//cygdrive/c/Jenkins/workspace/zulu17/"
 fi
 
 if [ "${ARCHITECTURE}" == "aarch64" ]; then
