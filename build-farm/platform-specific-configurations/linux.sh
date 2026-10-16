@@ -115,24 +115,34 @@ function setCrossCompilerEnvironment()
 
   # RISC-V cross compile settings for all VARIANT values
   echo RISC-V cross-compilation setup ...  Setting RISCV64, LD_LIBRARY_PATH, PATH, CC, CXX
-  export RISCV64=/opt/riscv_toolchain_linux
-  export LD_LIBRARY_PATH=$RISCV64/lib64
-  if [ "${VARIANT}" == "${BUILD_VARIANT_BISHENG}" ]; then
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$BUILD_LIBRARY_PATH
-  fi
-
-  if [ -r "$RISCV64/bin/riscv64-unknown-linux-gnu-g++" ]; then
-    export CC=$RISCV64/bin/riscv64-unknown-linux-gnu-gcc
-    export CXX=$RISCV64/bin/riscv64-unknown-linux-gnu-g++
+  if [ "${VARIANT}" == "${BUILD_VARIANT_DRAGONWELL}" ] && [ "$JAVA_FEATURE_VERSION" -eq 25 ]; then
+    export RISCV64=/opt/riscv_toolchain_gcc14
+    export LD_LIBRARY_PATH="$RISCV64/lib64:$RISCV64/sysroot/lib/:${LD_LIBRARY_PATH:-}"
     export PATH="$RISCV64/bin:$PATH"
-  elif [ -r /usr/bin/riscv64-linux-gnu-g++ ]; then
-    export CC=/usr/bin/riscv64-linux-gnu-gcc
-    export CXX=/usr/bin/riscv64-linux-gnu-g++
-    # This is required for OpenJ9 if not using "riscv64-unknown-linux-gnu-*"
-    # i.e. if using the default cross compiler supplied with Debian/Ubuntu
-    export RISCV_TOOLCHAIN_TYPE=install
+    export CC="$RISCV64/bin/riscv64-unknown-linux-gnu-gcc-14.2.0"
+    export CXX="$RISCV64/bin/riscv64-unknown-linux-gnu-g++"
+    RISCV_SYSROOT="$RISCV64/sysroot"
+    echo "Using Dragonwell JDK25 sysroot ${RISCV_SYSROOT}"
+  else
+    export RISCV64=/opt/riscv_toolchain_linux
+    export LD_LIBRARY_PATH=$RISCV64/lib64
+    if [ "${VARIANT}" == "${BUILD_VARIANT_BISHENG}" ]; then
+      export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$BUILD_LIBRARY_PATH
+    fi
+
+    if [ -r "$RISCV64/bin/riscv64-unknown-linux-gnu-g++" ]; then
+      export CC=$RISCV64/bin/riscv64-unknown-linux-gnu-gcc
+      export CXX=$RISCV64/bin/riscv64-unknown-linux-gnu-g++
+      export PATH="$RISCV64/bin:$PATH"
+    elif [ -r /usr/bin/riscv64-linux-gnu-g++ ]; then
+      export CC=/usr/bin/riscv64-linux-gnu-gcc
+      export CXX=/usr/bin/riscv64-linux-gnu-g++
+      # This is required for OpenJ9 if not using "riscv64-unknown-linux-gnu-*"
+      # i.e. if using the default cross compiler supplied with Debian/Ubuntu
+      export RISCV_TOOLCHAIN_TYPE=install
+    fi
+    RISCV_SYSROOT=${RISCV_SYSROOT:-/opt/fedora28_riscv_root}
   fi
-  RISCV_SYSROOT=${RISCV_SYSROOT:-/opt/fedora28_riscv_root}
   if [ ! -d "${RISCV_SYSROOT}" ]; then
      echo "RISCV_SYSROOT=${RISCV_SYSROOT} is undefined or does not exist - cannot proceed"
      exit 1
@@ -304,12 +314,12 @@ if [[ "${CONFIGURE_ARGS}" =~ .*"--with-devkit=".* ]]; then
 elif [[ "${BUILD_ARGS}" =~ .*"--use-adoptium-devkit".* ]]; then
   echo "Using gcc from Adoptium DevKit toolchain specified in --use-adoptium-devkit build args"
 else
-  if [ "${VARIANT}" == "${BUILD_VARIANT_DRAGONWELL}" ] && [ "$JAVA_FEATURE_VERSION" -eq 11 ] && [ -r /usr/local/gcc9/ ] && [ "${ARCHITECTURE}" == "aarch64" ]; then
+  if [ "${VARIANT}" == "${BUILD_VARIANT_DRAGONWELL}" ] && [ "$JAVA_FEATURE_VERSION" -eq 11 ] && [ -r /usr/local/gcc-9.3.0/ ] && [ "${ARCHITECTURE}" == "aarch64" ]; then
     # GCC9 rather than 10 requested by Alibaba for now
     # Ref https://github.com/adoptium/temurin-build/issues/2250#issuecomment-732958466
-    export PATH=/usr/local/gcc9/bin:$PATH
-    export CC=/usr/local/gcc9/bin/gcc-9.3
-    export CXX=/usr/local/gcc9/bin/g++-9.3
+    export PATH=/usr/local/gcc-9.3.0/bin:$PATH
+    export CC=/usr/local/gcc-9.3.0/bin/gcc
+    export CXX=/usr/local/gcc-9.3.0/bin/g++
     # Enable GCC 10 for Java 17+ for repeatable builds, but not for our supported releases
     # Ref https://github.com/adoptium/temurin-build/issues/2787
   elif [ "${ARCHITECTURE}" == "riscv64" ] && [ -r /usr/bin/gcc-10 ]; then

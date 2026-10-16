@@ -172,6 +172,15 @@ configureMacOSCodesignParameter() {
     # This command needs to escape the double quotes because they are needed to preserve the spaces in the codesign cert name
     addConfigureArg "--with-macosx-codesign-identity=" "\"${BUILD_CONFIG[MACOSX_CODESIGN_IDENTITY]}\""
   fi
+  if [[ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]] && [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "jdk21" ]; then
+    #local macos_bundle_build_version=0
+    addConfigureArg "--with-macosx-bundle-build-version=" "0"
+    if [ "${BUILD_CONFIG[OS_KERNEL_NAME]}" == "linux" ] && [ -n "`echo ${BUILD_CONFIG[BUILD_FULL_NAME]} | grep -E 'linux-x86_64|linux-aarch64'`" ] && [ -z "$(echo ${BUILD_CONFIG[TARGET_FILE_NAME]} | grep -E 'riscv|alpine')" ] && [ -z "`echo ${BUILD_CONFIG[BRANCH]} | grep standard`" ]; then
+      addConfigureArg "--with-jvm-features=" "aiext"
+    fi
+  elif [[ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]] && [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "jdk25" ]; then
+    addConfigureArg "--with-macosx-bundle-build-version=" "0"
+  fi
 }
 
 # JDK 24+ includes JEP 493 which allows for the JDK to enable
@@ -223,6 +232,13 @@ getOpenJDKUpdateAndBuildVersion() {
   fi
 
   cd "${BUILD_CONFIG[WORKSPACE_DIR]}"
+}
+
+getDragonwellVersionOPT() {
+  if [ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]; then
+    local dragonwellVerFile=${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[WORKING_DIR]}/${BUILD_CONFIG[OPENJDK_SOURCE_DIR]}/version.txt
+    cut -d'-' -f 2 <"${dragonwellVerFile}"
+  fi
 }
 
 patchFreetypeWindows() {
@@ -373,18 +389,41 @@ getOpenJdkVersion() {
     if [ -r "${dragonwellVerFile}" ]; then
       if [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK8_CORE_VERSION}" ]; then
         local updateNum="$(cut -d'.' -f 2 <"${dragonwellVerFile}")"
-        local buildNum="$(cut -d'.' -f 6 <"${dragonwellVerFile}")"
+        local buildNum="$(cut -d'.' -f 6 <"${dragonwellVerFile}" | cut -d'-' -f 1)"
         version="jdk8u${updateNum}-b${buildNum}"
-      else
+      elif [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK11_CORE_VERSION}" ]; then
         local minorNum="$(cut -d'.' -f 2 <"${dragonwellVerFile}")"
         local updateNum="$(cut -d'.' -f 3 <"${dragonwellVerFile}")"
         # special handling for dragonwell version
+        local dragonwellPatch="$(cut -d'.' -f 4 <"${dragonwellVerFile}")"
         local buildNum="$(cut -d'.' -f 5 <"${dragonwellVerFile}" | cut -d'-' -f 1)"
-        version="jdk-11.${minorNum}.${updateNum}+${buildNum}"
+        version="jdk-11.${minorNum}.${updateNum}.${dragonwellPatch}+${buildNum}"
+      elif [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK17_CORE_VERSION}" ]; then
+        local minorNum="$(cut -d'.' -f 2 <"${dragonwellVerFile}")"
+        local updateNum="$(awk -F"[.+]" '{print $3}' <"${dragonwellVerFile}")"
+        local patch="$(awk -F"[.+]" '{print $4}' <"${dragonwellVerFile}")"
+        local dragonwellPatch="$(awk -F"[.+]" '{print $5}' <"${dragonwellVerFile}")"
+        local buildNum="$(cut -d'+' -f 2 <"${dragonwellVerFile}" | cut -d'-' -f 1)"
+        version="jdk-17.${minorNum}.${updateNum}.${patch}.${dragonwellPatch}+${buildNum}"
+      elif [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "jdk21" ]; then
+        local minorNum="$(cut -d'.' -f 2 <"${dragonwellVerFile}")"
+        local updateNum="$(awk -F"[.+]" '{print $3}' <"${dragonwellVerFile}")"
+        local patch="$(awk -F"[.+]" '{print $4}' <"${dragonwellVerFile}")"
+        local dragonwellPatch="$(awk -F"[.+]" '{print $5}' <"${dragonwellVerFile}")"
+        local buildNum="$(cut -d'+' -f 2 <"${dragonwellVerFile}" | cut -d'-' -f 1)"
+        version="jdk-21.${minorNum}.${updateNum}.${patch}.${dragonwellPatch}+${buildNum}"
+      else
+        local minorNum="$(cut -d'.' -f 2 <"${dragonwellVerFile}")"
+        local updateNum="$(awk -F"[.+]" '{print $3}' <"${dragonwellVerFile}")"
+        local patch="$(awk -F"[.+]" '{print $4}' <"${dragonwellVerFile}")"
+        local dragonwellPatch="$(awk -F"[.+]" '{print $5}' <"${dragonwellVerFile}")"
+        local buildNum="$(cut -d'+' -f 2 <"${dragonwellVerFile}" | cut -d'-' -f 1)"
+        version="jdk-25.${minorNum}.${updateNum}.${patch}.${dragonwellPatch}+${buildNum}"
       fi
     else
       version=$(getOpenJDKTag)
-      version=$(echo "$version" | cut -d'_' -f 2)
+      version=$(echo "$version" | cut -d'_' -f 1 | cut -d '-' -f 2,3)
+      version="jdk-${version}"
     fi
   elif [ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_BISHENG}" ]; then
     local bishengVerFile=${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[WORKING_DIR]}/${BUILD_CONFIG[OPENJDK_SOURCE_DIR]}/version.txt
@@ -513,7 +552,16 @@ configureVersionStringParameter() {
     BUILD_CONFIG[VENDOR_VM_BUG_URL]="https://github.com/adoptium/adoptium-support/issues"
   elif [[ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]]; then
     BUILD_CONFIG[VENDOR]="Alibaba"
-    BUILD_CONFIG[VENDOR_VERSION]="\"(Alibaba Dragonwell)\""
+    if [ -n "`echo ${BUILD_CONFIG[BRANCH]} | grep standard`" ];then
+      BUILD_CONFIG[VENDOR_VERSION]="\"(Alibaba Dragonwell Standard Edition)\""
+    else
+      BUILD_CONFIG[VENDOR_VERSION]="\"(Alibaba Dragonwell Extended Edition)\""
+    fi
+    if [ -n "`echo ${BUILD_CONFIG[BRANCH]} | grep 'wip_'`" ];then
+      if [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" != "${JDK8_CORE_VERSION}" ]; then 
+        addConfigureArg "--with-version-pre=" "beta"
+      fi
+    fi
     BUILD_CONFIG[VENDOR_URL]="http://www.alibabagroup.com"
     BUILD_CONFIG[VENDOR_BUG_URL]="mailto:dragonwell_use@googlegroups.com"
     BUILD_CONFIG[VENDOR_VM_BUG_URL]="mailto:dragonwell_use@googlegroups.com"
@@ -530,7 +578,7 @@ configureVersionStringParameter() {
     BUILD_CONFIG[VENDOR_BUG_URL]="https://gitee.com/openeuler/bishengjdk-${BUILD_CONFIG[OPENJDK_FEATURE_NUMBER]}/issues"
     BUILD_CONFIG[VENDOR_VM_BUG_URL]="https://gitee.com/openeuler/bishengjdk-${BUILD_CONFIG[OPENJDK_FEATURE_NUMBER]}/issues"
   fi
-  if [ "${BUILD_CONFIG[OPENJDK_FEATURE_NUMBER]}" != 8 ]; then
+  if [ "${BUILD_CONFIG[OPENJDK_FEATURE_NUMBER]}" != 8 ] || [ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]; then
     addConfigureArg "--with-vendor-name=" "\"${BUILD_CONFIG[VENDOR]}\""
   fi
 
@@ -595,26 +643,39 @@ configureVersionStringParameter() {
     # > JDK 9
 
     # Set the build number (e.g. b04), this gets passed in from the calling script
-    buildNumber=${BUILD_CONFIG[OPENJDK_BUILD_NUMBER]}
+    local buildNumber=${BUILD_CONFIG[OPENJDK_BUILD_NUMBER]}
+    local dragonwellPatch=""
     if [ -z "${buildNumber}" ]; then
       # Get build number (eg.10) from tag of potential format "jdk-11.0.4+10_adopt"
       buildNumber=$(echo "${openJdkVersion}" | cut -d_ -f1 | cut -f2 -d"+")
     fi
-
-    if [ "${BUILD_CONFIG[RELEASE]}" == "false" ]; then
-      addConfigureArg "--with-version-opt=" "${dateSuffix}"
-      addConfigureArg "--with-version-pre=" "beta"
-    else
-      # "LTS" builds from jdk-21 will use "LTS" version opt
-      if isFromJdk21LTS; then
-          addConfigureArg "--with-version-opt=" "LTS"
-      else
-          addConfigureArg "--without-version-opt" ""
-      fi
-      addConfigureArg "--without-version-pre" ""
+    if [[ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]] && [ -z "${dragonwellPatch}" ]; then
+      # Get build number (eg.10) from tag of potential format "jdk-11.0.4+10_adopt"
+      dragonwellPatch=$(echo "${openJdkVersion}" | awk -F "[+.]" '{ print $4 }')
     fi
 
-    addConfigureArgIfValueIsNotEmpty "--with-version-build=" "${buildNumber}"
+    if [[ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]] && { [[ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "jdk21" ]] || [[ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "jdk25" ]]; }; then
+      local version_string=$(echo "${openJdkVersion%%+*}" | cut -d'-' -f 2)
+      addConfigureArgIfValueIsNotEmpty "--with-version-string=" "\"${version_string}\""
+    else
+      if [[ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]]; then
+        addConfigureArgIfValueIsNotEmpty "--with-version-patch=" "${dragonwellPatch}"
+      fi
+      if [ "${BUILD_CONFIG[RELEASE]}" == "false" ]; then
+        addConfigureArg "--with-version-opt=" "${dateSuffix}"
+        addConfigureArg "--with-version-pre=" "beta"
+      else
+        # "LTS" builds from jdk-21 will use "LTS" version opt
+        if isFromJdk21LTS; then
+          addConfigureArg "--with-version-opt=" "LTS"
+        else
+          addConfigureArg "--without-version-opt" ""
+        fi
+        addConfigureArg "--without-version-pre" ""
+      fi
+
+      addConfigureArgIfValueIsNotEmpty "--with-version-build=" "${buildNumber}"
+    fi
   fi
 
   if [ "${BUILD_CONFIG[OPENJDK_FEATURE_NUMBER]}" -gt 8 ]; then
@@ -636,6 +697,10 @@ configureVersionStringParameter() {
     fi
     if [ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_TEMURIN}" ]; then
       addConfigureArg "--with-vendor-version-string=" "${BUILD_CONFIG[VENDOR_VERSION]:-"Temurin"}-${derivedOpenJdkMetadataVersion}"
+    elif [ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]; then
+      local versionOpt
+      versionOpt=$(getDragonwellVersionOPT)
+      addConfigureArg "--with-vendor-version-string=" "${BUILD_CONFIG[VENDOR_VERSION]:-"Temurin"}-${derivedOpenJdkMetadataVersion}-${versionOpt}"
     fi
   fi
 
@@ -739,6 +804,24 @@ configureZlibLocation() {
 
 # Configure the command parameters
 configureCommandParameters() {
+  if [[ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]] && [[ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK17_CORE_VERSION}" ]]; then
+    pushd "${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[WORKING_DIR]}/${BUILD_CONFIG[OPENJDK_SOURCE_DIR]}"
+    git clone https://github.com/google/googletest.git -b v1.13.0
+    addConfigureArg "--with-gtest=" "${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[WORKING_DIR]}/${BUILD_CONFIG[OPENJDK_SOURCE_DIR]}/googletest"
+    popd
+  elif [[ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]] && [[ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "jdk21" ]]; then
+    pushd ${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[WORKING_DIR]}/${BUILD_CONFIG[OPENJDK_SOURCE_DIR]}
+    rm -rf googletest
+    git clone https://github.com/google/googletest.git -b v1.14.0
+    popd
+    addConfigureArg "--with-gtest=" "${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[WORKING_DIR]}/${BUILD_CONFIG[OPENJDK_SOURCE_DIR]}/googletest"
+  elif [[ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]] && [[ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "jdk25" ]]; then
+    pushd ${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[WORKING_DIR]}/${BUILD_CONFIG[OPENJDK_SOURCE_DIR]}
+    rm -rf googletest
+    git clone https://github.com/google/googletest.git -b v1.14.0
+    popd
+    addConfigureArg "--with-gtest=" "${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[WORKING_DIR]}/${BUILD_CONFIG[OPENJDK_SOURCE_DIR]}/googletest"
+  fi
   configureVersionStringParameter
   configureBootJDKConfigureParameter
   configureDevKitConfigureParameter
@@ -1012,6 +1095,7 @@ executeTemplatedFile() {
   fi
 
   # Execute the build passing the workspace dir and target dir as params for configure.txt
+  chmod 777 ${BUILD_CONFIG[WORKSPACE_DIR]}/config/configure-and-build.sh
   bash "${BUILD_CONFIG[WORKSPACE_DIR]}/config/configure-and-build.sh" ${BUILD_CONFIG[WORKSPACE_DIR]} ${BUILD_CONFIG[TARGET_DIR]}
   exitCode=$?
 
@@ -1048,6 +1132,85 @@ executeTemplatedFile() {
 
   # Restore exit behavior
   set -eu
+  if [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK11_CORE_VERSION}" ] && [ -n "`echo ${BUILD_CONFIG[BUILD_FULL_NAME]} | grep -E 'linux-x86_64|linux-aarch64'`" ]; then
+    PRODUCT_HOME=$(ls -d ${PWD}/build/*/images/${BUILD_CONFIG[JDK_PATH]})
+    git clone https://github.com/dragonwell-project/serverless-adapter.git
+    cd serverless-adapter
+    #if [ -n "`echo ${BUILD_CONFIG[TARGET_FILE_NAME]} | grep alpine-linux`" ];then
+    #  PATH=/usr/lib/jvm/zulu11/bin:$PATH JAVA_HOME=/usr/lib/jvm/zulu11 mvn package
+    #else
+    local jdk_path=jdk-11
+    if [ "$(arch)" = "x86_64" ] && [ -z "$(echo ${BUILD_CONFIG[TARGET_FILE_NAME]} | grep riscv)" ];then
+        jdk_path=jdk11
+    fi
+    PATH=/usr/lib/jvm/${jdk_path}/bin:$PATH JAVA_HOME=/usr/lib/jvm/${jdk_path} mvn package
+    #fi
+    cd -
+    mkdir -p ${PRODUCT_HOME}/lib/serverless
+    cp serverless-adapter/target/serverless-adapter-0.1.jar ${PRODUCT_HOME}/lib/serverless/serverless-adapter.jar
+    cp serverless-adapter/output/libloadclassagent.so ${PRODUCT_HOME}/lib/serverless/
+    if [ -z "`echo ${BUILD_CONFIG[BRANCH]} | grep standard`" ];then
+      local criuReleaseUrl="https://api.github.com/repos/dragonwell-project/criu/releases/latest"
+      if [ "$(arch)" = "x86_64" ];then
+        local criuDownloadUrl=$(curl -s ${criuReleaseUrl} | grep -i browser_download_url | grep "x64." | cut -d '"' -f 4)
+      elif [ "$(arch)" = "aarch64" ];then
+        local criuDownloadUrl=$(curl -s ${criuReleaseUrl} | grep -i browser_download_url | grep "arm64." | cut -d '"' -f 4)
+      fi
+      if [ -n "${criuDownloadUrl}" ];then
+        rm -rf criu*
+        curl -LSk -C - --retry 5 ${criuDownloadUrl} -o criu.tar.gz
+        tar zxf criu.tar.gz
+        chmod +x criu
+        mv criu ${PRODUCT_HOME}/lib/
+      fi
+    fi
+  elif [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK8_CORE_VERSION}" ] && [ -n "`echo ${BUILD_CONFIG[BUILD_FULL_NAME]} | grep -E 'linux-x86_64|linux-aarch64'`" ]; then
+    PRODUCT_HOME=$(ls -d ${PWD}/build/*/images/${BUILD_CONFIG[JDK_PATH]})
+    git clone https://github.com/dragonwell-project/serverless-adapter-jdk8.git serverless-adapter
+    cd serverless-adapter
+    if [ "$(arch)" = 'x86_64' ];then
+      wget -q https://dragonwell.oss-cn-shanghai.aliyuncs.com/8.16.17/Alibaba_Dragonwell_Extended_8.16.17_x64_linux.tar.gz -O dragonwell.tar.gz
+    else
+      wget -q https://dragonwell.oss-cn-shanghai.aliyuncs.com/8.16.17/Alibaba_Dragonwell_Extended_8.16.17_aarch64_linux.tar.gz -O dragonwell.tar.gz
+    fi
+    tar xf dragonwell.tar.gz
+    pwd
+    $(pwd)/dragonwell-8.16.17/bin/java -version
+    PATH=$(pwd)/dragonwell-8.16.17/bin:$PATH JAVA_HOME=$(pwd)/dragonwell-8.16.17 mvn package
+    cd -
+    if [ "$(arch)" = "x86_64" ];then
+      arch_dir=amd64
+    else
+      arch_dir=$(arch)
+    fi
+    mkdir -p ${PRODUCT_HOME}/jre/lib/${arch_dir}/serverless
+    cp serverless-adapter/target/serverless-adapter-0.1.jar ${PRODUCT_HOME}/jre/lib/${arch_dir}/serverless/serverless-adapter.jar
+    cp serverless-adapter/output/libloadclassagent.so ${PRODUCT_HOME}/jre/lib/${arch_dir}/serverless
+  elif [ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ] && [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "jdk21" ] && [ -n "`echo ${BUILD_CONFIG[BUILD_FULL_NAME]} | grep -E 'linux-x86_64|linux-aarch64'`" ] && [ -z "$(echo ${BUILD_CONFIG[TARGET_FILE_NAME]} | grep -E 'riscv|alpine')" ] && [ -z "`echo ${BUILD_CONFIG[BRANCH]} | grep standard`" ]; then
+    PRODUCT_HOME=$(ls -d ${PWD}/build/*/images/${BUILD_CONFIG[JDK_PATH]})
+    libjvm_path=$(find ${PRODUCT_HOME} -iname libjvm.so)
+    if [ "$(arch)" = "aarch64" ]; then
+      wget https://dragonwell.oss-cn-shanghai.aliyuncs.com/tools/signutil-aarch64 -O signutil
+    else
+      wget https://dragonwell.oss-cn-shanghai.aliyuncs.com/tools/signutil -O signutil
+    fi
+    chmod +x signutil
+    ./signutil sign ~/sk.bin ${libjvm_path}
+    ./signutil verify ~/pk.bin ${libjvm_path}
+  fi
+
+  if [ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ] && ([ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK11_CORE_VERSION}" ] || [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK8_CORE_VERSION}" ]) && [ -n "`echo ${BUILD_CONFIG[BUILD_FULL_NAME]} | grep -E 'linux-x86_64|linux-aarch64'`" ] && [ -z "$(echo ${BUILD_CONFIG[TARGET_FILE_NAME]} | grep -E 'riscv|alpine')" ] && [ -z "`echo ${BUILD_CONFIG[BRANCH]} | grep standard`" ]; then
+    PRODUCT_HOME=$(ls -d ${PWD}/build/*/images/${BUILD_CONFIG[JDK_PATH]})
+    libjvm_path=$(find ${PRODUCT_HOME} -iname libjvm.so)
+    if [ "$(arch)" = "aarch64" ]; then
+      wget https://dragonwell.oss-cn-shanghai.aliyuncs.com/tools/signutil-aarch64 -O signutil
+    else
+      wget https://dragonwell.oss-cn-shanghai.aliyuncs.com/tools/signutil -O signutil
+    fi
+    chmod +x signutil
+    ./signutil sign ~/sk.bin ${libjvm_path}
+    ./signutil verify ~/pk.bin ${libjvm_path}
+  fi
 }
 
 createOpenJDKFailureLogsArchive() {
@@ -2001,9 +2164,51 @@ getJdkArchivePath() {
   # Todo: Set this to the outcome of https://github.com/adoptium/temurin-build/issues/1016
   # local version="$(parseJavaVersionString)
   # echo "jdk-${version}"
-
-  local version=$(getOpenJdkVersion)
-  echo "$version"
+  if [ "${BUILD_CONFIG[BUILD_VARIANT]}" == "${BUILD_VARIANT_DRAGONWELL}" ]; then
+    local dragonwellVerFile=${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[WORKING_DIR]}/${BUILD_CONFIG[OPENJDK_SOURCE_DIR]}/version.txt
+    if [ -r "${dragonwellVerFile}" ]; then
+      if [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK8_CORE_VERSION}" ]; then
+        local v1="$(cut -d'.' -f 3 <"${dragonwellVerFile}")"
+        local v2="$(cut -d'.' -f 4 <"${dragonwellVerFile}")"
+        local v3="$(cut -d'.' -f 5 <"${dragonwellVerFile}")"
+        version="dragonwell-${v1}.${v2}.${v3}"
+      elif [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK11_CORE_VERSION}" ]; then
+        local minorNum="$(cut -d'.' -f 2 <${dragonwellVerFile})"
+        local updateNum="$(cut -d'.' -f 3 <${dragonwellVerFile})"
+        local dragonwellPatch="$(cut -d'.' -f 4 <${dragonwellVerFile})"
+        local buildNum="$(cut -d'.' -f 5 <${dragonwellVerFile})"
+        version="dragonwell-11.${minorNum}.${updateNum}.${dragonwellPatch}+${buildNum}"
+      elif [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "${JDK17_CORE_VERSION}" ]; then
+        local minorNum="$(cut -d'.' -f 2 <${dragonwellVerFile})"
+        local updateNum="$(awk -F"[.+]" '{print $3}' <${dragonwellVerFile})"
+        local patch="$(awk -F"[.+]" '{print $4}'  <${dragonwellVerFile})"
+        local dragonwellPatch="$(awk -F"[.+]" '{print $5}' <${dragonwellVerFile})"
+        local buildNum="$(cut -d'+' -f 2 <${dragonwellVerFile})"
+        version="dragonwell-17.${minorNum}.${updateNum}.${patch}.${dragonwellPatch}+${buildNum}"
+      elif [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" == "jdk21" ]; then
+        local minorNum="$(cut -d'.' -f 2 <${dragonwellVerFile})"
+        local updateNum="$(awk -F"[.+]" '{print $3}' <${dragonwellVerFile})"
+        local patch="$(awk -F"[.+]" '{print $4}'  <${dragonwellVerFile})"
+        local dragonwellPatch="$(awk -F"[.+]" '{print $5}' <${dragonwellVerFile})"
+        local buildNum="$(cut -d'+' -f 2 <${dragonwellVerFile})"
+        version="dragonwell-21.${minorNum}.${updateNum}.${patch}.${dragonwellPatch}+${buildNum}"
+      else
+        local minorNum="$(cut -d'.' -f 2 <${dragonwellVerFile})"
+        local updateNum="$(awk -F"[.+]" '{print $3}' <${dragonwellVerFile})"
+        local patch="$(awk -F"[.+]" '{print $4}'  <${dragonwellVerFile})"
+        local dragonwellPatch="$(awk -F"[.+]" '{print $5}' <${dragonwellVerFile})"
+        local buildNum="$(cut -d'+' -f 2 <${dragonwellVerFile})"
+        version="dragonwell-25.${minorNum}.${updateNum}.${patch}.${dragonwellPatch}+${buildNum}"
+      fi
+      echo "$version"
+    else
+      local version=$(getOpenJdkVersion)
+      echo "$version"
+    fi
+  else
+    local version=$(getOpenJdkVersion)
+    echo "$version"
+  fi
 }
 
 getJreArchivePath() {
