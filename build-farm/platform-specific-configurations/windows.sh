@@ -26,9 +26,6 @@ export OPENJ9_NASM_VERSION=2.13.03
 
 TOOLCHAIN_VERSION="2022"
 
-# Add Dragonwell JDK 17 to the existing JDK 21/25 boot JDK lookup.
-# Preserve the existing Dragonwell JDK 8 and 11 behavior.
-if [[ "${VARIANT}" == "${BUILD_VARIANT_DRAGONWELL}" && ("${JAVA_TO_BUILD}" = "jdk17" || "${JAVA_TO_BUILD}" = "jdk21u" || "${JAVA_TO_BUILD}" = "jdk25u") ]] || [ "${VARIANT}" != "${BUILD_VARIANT_DRAGONWELL}" ]; then
 if [ "$ARCHITECTURE" == "aarch64" ]; then
   # Windows aarch64 cross compiles requires same version boot jdk
   echo "Cross compile of aarch64 on Windows uses same boot jdk as build version, using: ${JAVA_FEATURE_VERSION}"
@@ -61,7 +58,6 @@ if [ $executedJavaVersion -ne 0 ]; then
     exit 1
 fi
 "$JDK_BOOT_DIR/bin/java" -version 2>&1 | sed 's/^/BOOT JDK: /'
-fi
 
 if [ "${ARCHITECTURE}" == "x86-32" ]
 then
