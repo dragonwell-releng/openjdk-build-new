@@ -2145,6 +2145,10 @@ printJavaVersionString() {
        echo "VERSION_STRING=${ver_string}"
 
        echo "${ver_string}" > "${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/metadata/version.txt"
+       # Preserve the built image's release properties without executing the target JVM.
+       if [ -r "$PRODUCT_HOME/release" ]; then
+         cp "$PRODUCT_HOME/release" "${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/metadata/release.txt"
+       fi
      else
        # print version string around easy to find output
        # do not modify these strings as jenkins looks for them
