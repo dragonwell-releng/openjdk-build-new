@@ -6,7 +6,7 @@
 ISA 默认值由 `build-farm/platform-specific-configurations/linux.sh` 管理：
 
 ```text
--march=rv64imafdcv_zicsr_zifencei_zicntr_zihpm_zba_zbb_zbs_zicond_zihintpause_zihintntl_zca_zcb_zcd_zfh_zfhmin_zve32x_zve32f_zve64x_zve64f_zve64d_zvl128b_zvfh_zvfhmin_zvbb_zvbc_zvkb_zvkg_zvkn_zvknc_zvkng_zvks_zvksc_zvksg_zvkt_zicbom_zicboz_zicbop_zawrs_zimop_zcmop -mabi=lp64d
+-march=rva23u64_zifencei -mabi=lp64d
 ```
 
 镜像只提供工具链和 sysroot，不固定目标 ISA；可通过 `RISCV_MARCH` 覆盖构建参数。
@@ -80,7 +80,7 @@ APT_MIRROR=http://mirrors.aliyun.com/ubuntu JOBS=48 \
 平台脚本为 Dragonwell 25 Linux/riscv64 选择 `/opt/anolis23.5/cross` 与
 `/opt/anolis23.5/sysroot`；可以覆盖 `RISCV64`、`RISCV_SYSROOT`、`RISCV_MARCH`、
 `RISCV_BUILD_JDK`、`RISCV_BUILD_CC`、`RISCV_BUILD_CXX`。目标库不加入宿主 `LD_LIBRARY_PATH`。
-默认扩展列表显式包含 HotSpot 所需的 `zifencei`。
+默认使用 `rva23u64_zifencei`，显式包含 HotSpot 所需的 `zifencei`。
 已发布的 v1 镜像可能携带旧的 `RISCV_MARCH` 环境变量；本地 `build.sh` 会清除该默认值，
 配套 Jenkins 配置通过 `dockerArgs: '-e RISCV_MARCH='` 清除它，使平台脚本中的新默认值生效。
 显式设置非空 `RISCV_MARCH` 时仍使用调用者指定的值，无需重建镜像。

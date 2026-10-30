@@ -119,7 +119,7 @@ function setCrossCompilerEnvironment()
     # Anolis GA sysroot and patched GCC; see docker/dragonwell25-riscv64.
     export RISCV64=${RISCV64:-/opt/anolis23.5/cross}
     export RISCV_SYSROOT=${RISCV_SYSROOT:-/opt/anolis23.5/sysroot}
-    export RISCV_MARCH=${RISCV_MARCH:-rv64imafdcv_zicsr_zifencei_zicntr_zihpm_zba_zbb_zbs_zicond_zihintpause_zihintntl_zca_zcb_zcd_zfh_zfhmin_zve32x_zve32f_zve64x_zve64f_zve64d_zvl128b_zvfh_zvfhmin_zvbb_zvbc_zvkb_zvkg_zvkn_zvknc_zvkng_zvks_zvksc_zvksg_zvkt_zicbom_zicboz_zicbop_zawrs_zimop_zcmop}
+    export RISCV_MARCH=${RISCV_MARCH:-rva23u64_zifencei}
     export RISCV_BUILD_JDK=${RISCV_BUILD_JDK:-/opt/bootjdk}
     export CC="$RISCV64/bin/riscv64-unknown-linux-gnu-gcc"
     export CXX="$RISCV64/bin/riscv64-unknown-linux-gnu-g++"
