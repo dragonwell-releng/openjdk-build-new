@@ -42,7 +42,6 @@ ENV PATH=/opt/anolis23.5/cross/bin:/opt/bootjdk/bin:$PATH \
     JAVA_HOME=/opt/bootjdk \
     RISCV64=/opt/anolis23.5/cross \
     RISCV_SYSROOT=/opt/anolis23.5/sysroot \
-    RISCV_MARCH=rva23u64_zifencei \
     JDK_BOOT_VERSION=25 \
     JDK25_BOOT_DIR=/opt/bootjdk \
     RISCV_BUILD_JDK=/opt/bootjdk

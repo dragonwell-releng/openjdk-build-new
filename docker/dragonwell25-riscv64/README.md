@@ -2,7 +2,14 @@
 
 在 x86_64 Linux 上交叉编译，使用仓库正式的 `build-farm/make-adopt-build-farm.sh` 入口。
 目标 sysroot 来自 Anolis 23.5 GA RISC-V DVD；交叉 GCC/binutils 由对应发行版 SRPM
-及其补丁生成。C、C++、汇编和 libsleef 统一使用 `-march=rva23u64_zifencei -mabi=lp64d`。
+及其补丁生成。C、C++、汇编和 libsleef 使用同一目标 ISA，ABI 为 `lp64d`。
+ISA 默认值由 `build-farm/platform-specific-configurations/linux.sh` 管理：
+
+```text
+-march=rv64imafdcv_zicsr_zifencei_zicntr_zihpm_zba_zbb_zbs_zicond_zihintpause_zihintntl_zca_zcb_zcd_zfh_zfhmin_zve32x_zve32f_zve64x_zve64f_zve64d_zvl128b_zvfh_zvfhmin_zvbb_zvbc_zvkb_zvkg_zvkn_zvknc_zvkng_zvks_zvksc_zvksg_zvkt_zicbom_zicboz_zicbop_zawrs_zimop_zcmop -mabi=lp64d
+```
+
+镜像只提供工具链和 sysroot，不固定目标 ISA；可通过 `RISCV_MARCH` 覆盖构建参数。
 
 | 输入 | 固定版本 |
 | --- | --- |
@@ -73,14 +80,17 @@ APT_MIRROR=http://mirrors.aliyun.com/ubuntu JOBS=48 \
 平台脚本为 Dragonwell 25 Linux/riscv64 选择 `/opt/anolis23.5/cross` 与
 `/opt/anolis23.5/sysroot`；可以覆盖 `RISCV64`、`RISCV_SYSROOT`、`RISCV_MARCH`、
 `RISCV_BUILD_JDK`、`RISCV_BUILD_CC`、`RISCV_BUILD_CXX`。目标库不加入宿主 `LD_LIBRARY_PATH`。
-纯 `rva23u64` 缺少 HotSpot 使用的 `fence.i` 扩展，故显式加 `zifencei`。
+默认扩展列表显式包含 HotSpot 所需的 `zifencei`。
+已发布的 v1 镜像可能携带旧的 `RISCV_MARCH` 环境变量；本地 `build.sh` 会清除该默认值，
+配套 Jenkins 配置通过 `dockerArgs: '-e RISCV_MARCH='` 清除它，使平台脚本中的新默认值生效。
+显式设置非空 `RISCV_MARCH` 时仍使用调用者指定的值，无需重建镜像。
 
 ## SBOM 与运行验证
 
-联调期间配套流水线只对非发布的 Dragonwell 25 Linux/riscv64 构建临时跳过 SBOM 校验、
+联调期间配套流水线对使用新 defaults 的所有 JDK 构建（包括发布构建）临时跳过 SBOM 校验、
 SmokeTests、AQA/TCK 与可复现比较；编译、打包、归档与 SBOM 生成保持开启。
 Jenkins 构建描述会标明 BUILD ONLY。恢复时删除流水线 defaults 中的
-`postBuildValidation.skip` 对应条目。公共校验任务及新工具链基线适配暂缓。
+`postBuildValidation` 配置，或将 `postBuildValidation.skipAll` 改为 false。公共校验任务及新工具链基线适配暂缓。
 
 ```bash
 # 在已安装 qemu-riscv64 的 Linux 上运行目标 JDK 的编译与运行冒烟。

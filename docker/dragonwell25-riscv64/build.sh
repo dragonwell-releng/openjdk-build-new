@@ -43,12 +43,13 @@ fi
 mkdir -p "$work/jdk-workspace" "$work/ccache" "$work/logs"
 exec 9>"$work/jdk-build.lock"
 flock -n 9 || { echo "Another JDK build is using $work" >&2; exit 1; }
+# Clear any ISA default baked into older images; linux.sh owns the build default.
 "${runtime[@]}" run --rm --network=host --security-opt label=disable \
     --entrypoint /bin/bash -w /openjdk-build \
     -e ARCHITECTURE=riscv64 -e TARGET_OS=linux -e VARIANT=dragonwell -e JAVA_TO_BUILD=jdk25u \
     -e "BUILD_ARGS=${BUILD_ARGS:---create-sbom --cross-compile}" \
     -e "CONFIGURE_ARGS=${CONFIGURE_ARGS:-}" -e "NUM_PROCESSORS=${JOBS:-32}" \
-    -e "RISCV_MARCH=${RISCV_MARCH:-rva23u64_zifencei}" -e CCACHE_DIR=/ccache \
+    -e "RISCV_MARCH=${RISCV_MARCH:-}" -e CCACHE_DIR=/ccache \
     -e "FILENAME=${FILENAME:-OpenJDK25U-jdk_riscv64_linux_dragonwell_anolis23.5-rva23.tar.gz}" \
     -v "$repo:/openjdk-build" -v "$work/jdk-workspace:/openjdk-build/workspace" \
     -v "$work/ccache:/ccache" \
