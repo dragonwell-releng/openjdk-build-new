@@ -116,13 +116,36 @@ function setCrossCompilerEnvironment()
   # RISC-V cross compile settings for all VARIANT values
   echo RISC-V cross-compilation setup ...  Setting RISCV64, LD_LIBRARY_PATH, PATH, CC, CXX
   if [ "${VARIANT}" == "${BUILD_VARIANT_DRAGONWELL}" ] && [ "$JAVA_FEATURE_VERSION" -eq 25 ]; then
-    export RISCV64=/opt/riscv_toolchain_gcc14
-    export LD_LIBRARY_PATH="$RISCV64/lib64:$RISCV64/sysroot/lib/:${LD_LIBRARY_PATH:-}"
-    export PATH="$RISCV64/bin:$PATH"
-    export CC="$RISCV64/bin/riscv64-unknown-linux-gnu-gcc-14.2.0"
+    # Anolis GA sysroot and patched GCC; see docker/dragonwell25-riscv64.
+    export RISCV64=${RISCV64:-/opt/anolis23.5/cross}
+    export RISCV_SYSROOT=${RISCV_SYSROOT:-/opt/anolis23.5/sysroot}
+    export RISCV_MARCH=${RISCV_MARCH:-rva23u64_zifencei}
+    export RISCV_BUILD_JDK=${RISCV_BUILD_JDK:-/opt/bootjdk}
+    export CC="$RISCV64/bin/riscv64-unknown-linux-gnu-gcc"
     export CXX="$RISCV64/bin/riscv64-unknown-linux-gnu-g++"
-    RISCV_SYSROOT="$RISCV64/sysroot"
-    echo "Using Dragonwell JDK25 sysroot ${RISCV_SYSROOT}"
+    export PATH="$RISCV64/bin:$PATH"
+    export CCACHE_DIR=${CCACHE_DIR:-${WORKSPACE:-$PWD}/.ccache}
+    export BUILD_CC=${RISCV_BUILD_CC:-/usr/bin/gcc-14}
+    export BUILD_CXX=${RISCV_BUILD_CXX:-/usr/bin/g++-14}
+    export PKG_CONFIG_SYSROOT_DIR="$RISCV_SYSROOT"
+    export PKG_CONFIG_LIBDIR="$RISCV_SYSROOT/usr/lib64/pkgconfig:$RISCV_SYSROOT/usr/share/pkgconfig"
+    if [ ! -x "$CC" ] || [ ! -x "$CXX" ] || [ ! -x "$BUILD_CC" ] || [ ! -x "$BUILD_CXX" ]; then
+      echo "Missing Anolis cross compiler or x86_64 build compiler"
+      exit 1
+    fi
+    if [ ! -x "$RISCV_BUILD_JDK/bin/javac" ]; then
+      echo "Missing x86_64 JDK 25 at RISCV_BUILD_JDK=$RISCV_BUILD_JDK"
+      exit 1
+    fi
+    if ! printf 'int x;\n' | "$CC" -march="$RISCV_MARCH" -mabi=lp64d -x c -c -o /dev/null -; then
+      echo "RISC-V compiler does not support -march=$RISCV_MARCH -mabi=lp64d"
+      exit 1
+    fi
+    # Do not put target libraries on the x86_64 host's LD_LIBRARY_PATH.
+    CONFIGURE_ARGS_FOR_ANY_PLATFORM="${CONFIGURE_ARGS_FOR_ANY_PLATFORM} --with-toolchain-path=$RISCV64/bin --with-build-jdk=$RISCV_BUILD_JDK --with-extra-cflags=\"-march=$RISCV_MARCH -mabi=lp64d\" --with-extra-cxxflags=\"-march=$RISCV_MARCH -mabi=lp64d\" --with-extra-asflags=\"-march=$RISCV_MARCH -mabi=lp64d\" BUILD_CC=$BUILD_CC BUILD_CXX=$BUILD_CXX"
+    # libsleef otherwise overrides the global ISA with -march=rv64gcv.
+    # Use the Anolis sysroot ALSA headers/libraries rather than downloading an older copy.
+    BUILD_ARGS="${BUILD_ARGS} --skip-alsa --make-args \"LIBSLEEF_CFLAGS='-march=$RISCV_MARCH -mabi=lp64d'\""
   else
     export RISCV64=/opt/riscv_toolchain_linux
     export LD_LIBRARY_PATH=$RISCV64/lib64
@@ -147,7 +170,7 @@ function setCrossCompilerEnvironment()
      echo "RISCV_SYSROOT=${RISCV_SYSROOT} is undefined or does not exist - cannot proceed"
      exit 1
   fi
-  CONFIGURE_ARGS_FOR_ANY_PLATFORM="${CONFIGURE_ARGS_FOR_ANY_PLATFORM} --openjdk-target=riscv64-unknown-linux-gnu --with-sysroot=${RISCV_SYSROOT} -with-boot-jdk=$JDK_BOOT_DIR"
+  CONFIGURE_ARGS_FOR_ANY_PLATFORM="${CONFIGURE_ARGS_FOR_ANY_PLATFORM} --openjdk-target=riscv64-unknown-linux-gnu --with-sysroot=${RISCV_SYSROOT} --with-boot-jdk=$JDK_BOOT_DIR"
 
   # RISC-V cross compilation does not work with OpenJ9's option: --with-openssl=fetched
   # TODO: This file needs an overhaul as it's getting too long and hard to maintain ...
@@ -275,6 +298,11 @@ if [ "${VARIANT}" == "${BUILD_VARIANT_TEMURIN}" ] && [ "$JAVA_FEATURE_VERSION" -
 then
   echo "Disabling precompiled headers as this may introduce non-deterministic PCH gch binaries, especially if ASLR is enabled, see: https://gcc.gnu.org/onlinedocs/gcc/Precompiled-Headers.html and https://github.com/adoptium/temurin-build/issues/4401"
   export CONFIGURE_ARGS_FOR_ANY_PLATFORM="${CONFIGURE_ARGS_FOR_ANY_PLATFORM} --disable-precompiled-headers"
+fi
+
+if [ "$VARIANT" == "$BUILD_VARIANT_DRAGONWELL" ] && [ "$JAVA_FEATURE_VERSION" -eq 25 ] && [ "$ARCHITECTURE" == "riscv64" ] && [ "$NATIVE_API_ARCH" != "riscv64" ]; then
+  export JDK_BOOT_VERSION=25
+  export JDK25_BOOT_DIR=${RISCV_BUILD_JDK:-/opt/bootjdk}
 fi
 
 BOOT_JDK_VARIABLE="JDK${JDK_BOOT_VERSION}_BOOT_DIR"
