@@ -51,4 +51,3 @@ header:
     - 'cyclonedx-lib/dependency_data/**'
     - 'makejdk-any-platform.1'
     - 'serverTimestamp.properties'
-    - 'docker/dragonwell25-riscv64/inputs.sha256'

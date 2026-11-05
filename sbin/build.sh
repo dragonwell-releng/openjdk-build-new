@@ -2164,6 +2164,30 @@ printJavaVersionString() {
   fi
 }
 
+# Cross builds cannot execute the target JVM during make images, so generate
+# the Dragonwell 25 RISC-V CDS archives with the QEMU user emulator from the
+# pinned build image before moving and packaging the JDK image.
+generateDragonwell25RiscvCds() {
+  if [ "${GENERATE_CDS_ARCHIVES:-true}" != "true" ] ||
+      [ "${BUILD_CONFIG[BUILD_VARIANT]}" != "${BUILD_VARIANT_DRAGONWELL}" ] ||
+      [ "${BUILD_CONFIG[OPENJDK_CORE_VERSION]}" != "jdk25" ] ||
+      [ "${BUILD_CONFIG[CROSSCOMPILE]}" != "true" ] ||
+      [ "${BUILD_CONFIG[OS_KERNEL_NAME]}" != "linux" ] ||
+      [ "${ARCHITECTURE:-}" != "riscv64" ]; then
+    return
+  fi
+
+  if [ ! -r "$PRODUCT_HOME/release" ] || ! grep -q '^OS_ARCH="riscv64"' "$PRODUCT_HOME/release"; then
+    echo "Expected a Dragonwell 25 RISC-V release file at $PRODUCT_HOME/release" >&2
+    return 1
+  fi
+
+  local cdsScript="$SCRIPT_DIR/generateDragonwell25RiscvCds.sh"
+  local cdsOutput="${BUILD_CONFIG[WORKSPACE_DIR]}/${BUILD_CONFIG[TARGET_DIR]}/metadata"
+  echo "Generating Dragonwell 25 RISC-V CDS archives before packaging ..."
+  bash "$cdsScript" "$PRODUCT_HOME" "$cdsOutput"
+}
+
 getJdkArchivePath() {
   # Todo: Set this to the outcome of https://github.com/adoptium/temurin-build/issues/1016
   # local version="$(parseJavaVersionString)
@@ -3240,6 +3264,7 @@ if [[ "${BUILD_CONFIG[ASSEMBLE_EXPLODED_IMAGE]}" == "true" ]]; then
   buildTemplatedFile
   executeTemplatedFile
   printJavaVersionString
+  generateDragonwell25RiscvCds
   addInfoToReleaseFile
   addInfoToJson
   cleanAndMoveArchiveFiles
@@ -3274,6 +3299,7 @@ echo "build.sh : $(date +%T) : Build complete ..."
 
 if [[ "${BUILD_CONFIG[MAKE_EXPLODED]}" != "true" ]]; then
   printJavaVersionString
+  generateDragonwell25RiscvCds
   addInfoToReleaseFile
   addInfoToJson
   cleanAndMoveArchiveFiles
