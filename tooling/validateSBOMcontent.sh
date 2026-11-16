@@ -179,16 +179,27 @@ else
   fi
 fi
 
-# Fetch freetype version from source code and compare against freetype version in sbom.
-FREETYPE_VERSION_FILE="src/java.desktop/share/legal/freetype.md"
-[ "${MAJORVERSION}" = "8" ] && FREETYPE_VERSION_FILE="THIRD_PARTY_README"
-FREETYPE_VERSION_FILE="https://raw.githubusercontent.com/$(echo "$GITURL" | cut -d/ -f4)/$(echo "$GITURL" | cut -d/ -f5)/${GITSHA}/${FREETYPE_VERSION_FILE}"
-if ! EXPECTED_FREETYPE="$(curl --fail --silent --show-error --location "${FREETYPE_VERSION_FILE}" | grep '## The FreeType Project:' | grep -o "[0-9\.]*")"; then
-  echo "ERROR: Freetype version could not be found at expected location here: ${FREETYPE_VERSION_FILE}"
-  RC=1
-else
-  # shellcheck disable=SC2086
-  [ "${FREETYPE}" != "$EXPECTED_FREETYPE" ] && echo "ERROR: FreeType version not ${EXPECTED_FREETYPE} (SBOM has ${FREETYPE})"   && RC=1
+case "${MAJORVERSION}:${SBOMFILE##*/}" in
+  17:*_x64_alpine-linux_dragonwell_*)
+    # --skip-freetype uses the system FreeType from the Alpine build image.
+    EXPECTED_FREETYPE="2.11.1"
+    ;;
+  *)
+    FREETYPE_VERSION_FILE="src/java.desktop/share/legal/freetype.md"
+    [ "${MAJORVERSION}" = "8" ] && FREETYPE_VERSION_FILE="THIRD_PARTY_README"
+    FREETYPE_VERSION_FILE="https://raw.githubusercontent.com/$(echo "$GITURL" | cut -d/ -f4)/$(echo "$GITURL" | cut -d/ -f5)/${GITSHA}/${FREETYPE_VERSION_FILE}"
+    if ! EXPECTED_FREETYPE="$(curl --fail --silent --show-error --location "${FREETYPE_VERSION_FILE}" | grep '## The FreeType Project:' | grep -o "[0-9\.]*")"; then
+      echo "ERROR: Freetype version could not be found at expected location here: ${FREETYPE_VERSION_FILE}"
+      RC=1
+    fi
+    ;;
+esac
+
+if [ -n "$EXPECTED_FREETYPE" ]; then
+  if [ "${FREETYPE}" != "$EXPECTED_FREETYPE" ]; then
+    echo "ERROR: FreeType version not ${EXPECTED_FREETYPE} (SBOM has ${FREETYPE})"
+    RC=1
+  fi
   echo "FREETYPE is ${FREETYPE}"
 fi
 
