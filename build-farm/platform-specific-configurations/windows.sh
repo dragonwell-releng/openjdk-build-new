@@ -24,6 +24,11 @@ export ALLOW_DOWNLOADS=true
 export LANG=C
 export OPENJ9_NASM_VERSION=2.13.03
 
+# Keep inherited JVM options out of the DW21 Boot JDK version check.
+if [ "${VARIANT}" == "${BUILD_VARIANT_DRAGONWELL}" ] && [ "${JAVA_FEATURE_VERSION}" == "21" ]; then
+  unset JAVA_TOOL_OPTIONS
+fi
+
 TOOLCHAIN_VERSION="2022"
 
 # Dragonwell JDK 8 uses its installed bootstrap JDK below.
