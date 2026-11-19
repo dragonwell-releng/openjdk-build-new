@@ -27,6 +27,20 @@ export OPENJ9_NASM_VERSION=2.13.03
 # Keep inherited JVM options out of the DW21 Boot JDK version check.
 if [ "${VARIANT}" == "${BUILD_VARIANT_DRAGONWELL}" ] && [ "${JAVA_FEATURE_VERSION}" == "21" ]; then
   unset JAVA_TOOL_OPTIONS
+  if [[ " ${BUILD_ARGS} " == *" --create-sbom "* ]]; then
+    # The managed Windows image installs Ant in a versioned directory.
+    for ant_home in /cygdrive/c/apache-ant/apache-ant-* /cygdrive/c/apache-ant "${ANT_HOME}"; do
+      [[ -x "${ant_home}/bin/ant" && -f "${ant_home}/lib/ant.jar" ]] || continue
+      export ANT_HOME="${ant_home}"
+      export PATH="${ANT_HOME}/bin:${PATH}"
+      echo "Using Apache Ant from ${ANT_HOME}"
+      break
+    done
+    if ! command -v ant >/dev/null 2>&1; then
+      echo "[ERROR] Apache Ant is required for the DW21 Windows SBOM" >&2
+      exit 1
+    fi
+  fi
 fi
 
 TOOLCHAIN_VERSION="2022"
